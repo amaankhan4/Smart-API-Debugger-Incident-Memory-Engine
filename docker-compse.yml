@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: debugger-postgres
+    environment:
+      POSTGRES_USER: debugger
+      POSTGRES_PASSWORD: debugger
+      POSTGRES_DB: debugger_db
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    container_name: debugger-redis
+    ports:
+      - "6379:6379"
+
+  chroma:
+    image: chromadb/chroma
+    container_name: debugger-chroma
+    ports:
+      - "8000:8000"
