@@ -1,0 +1,10 @@
+smartdebugvenv
+.env
+__pycache__/
+*.pyc
+instance/
+.vscode/
+.idea/
+.DS_Store
+logs/
+docker-compose.override.yml

@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+sqlalchemy
+asyncpg
+alembic
+psycopg2-binary
+redis
+celery
+langchain
+chromadb
+python-dotenv
+pydantic
+tqdm
+motor
+pymongo
+pydantic-settings
+python-multipart
