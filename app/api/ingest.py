@@ -1,20 +1,17 @@
-from fastapi import APIRouter, UploadFile # type: ignore
-from app.services.log_parser import parse_logs
-from app.core.mongo import raw_logs_col, events_col
+from fastapi import APIRouter, UploadFile,File, HTTPException, status 
+from app.services.ingest_service import process_uploaded_file_chunk
+from app.models.files import update_total_chunks
+from app.core.config import settings
+from pathlib import Path
 
 router = APIRouter()
 
-@router.post("/upload")
-async def upload_log(file: UploadFile):
-    content = await file.read()
-    events = parse_logs(content)
+@router.post("/ingest")
+async def upload_log(request: dict):
 
-    await raw_logs_col.insert_one({
-        "filename": file.filename,
-        "raw": content.decode(),
-    })
-
-    if events:
-        await events_col.insert_many(events)
-
-    return {"events_extracted": len(events)}
+    try:
+        pass
+    
+    except Exception as e:
+        return {"message": "There was an error uploading the file"}
+    

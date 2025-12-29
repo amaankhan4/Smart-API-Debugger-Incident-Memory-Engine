@@ -8,3 +8,5 @@ instance/
 .DS_Store
 logs/
 docker-compose.override.yml
+test_data.log
+uploads/
