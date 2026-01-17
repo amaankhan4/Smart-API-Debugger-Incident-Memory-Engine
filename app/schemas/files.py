@@ -18,6 +18,6 @@ class FileCreate(BaseModel):
     last_raw_log_chunk_id: Optional[str] = None
     
 class FileDB(FileCreate):
-    id: Optional[str]
+    file_id: Optional[str]
     status: FileStatus
     created_at : datetime

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, status
-from app.services.ingest_service import save_file_to_db
+from app.services.ingest_service import save_file_to_db, get_all_existing_files_metadata
 import aiofiles
 from app.core.config import settings
 from pathlib import Path
@@ -53,3 +53,14 @@ async def upload_log(file: UploadFile = File(...)):
     
     finally:
         await file.close()
+
+
+@router.get("/AllFiles")
+async def getAllExecutableFiles():
+    try:
+        result = await get_all_existing_files_metadata(None,target_dir)
+
+        return {"message":"All Executable Files","data":result}
+    
+    except Exception as e:
+        return {"message": "There was an error getting all files metadata"}

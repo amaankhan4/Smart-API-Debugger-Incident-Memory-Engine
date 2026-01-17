@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 import uvicorn
-from app.api import ingest, events, incident, upload
+from app.api import ingest, incident, events, upload, user_management
 
 app = FastAPI(title="Smart API Debugger")
 
@@ -14,7 +14,6 @@ def health():
     return {"status": "ok"}
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(
         "app.main:app",
         host="127.0.0.1",

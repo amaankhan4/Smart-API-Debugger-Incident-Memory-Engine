@@ -10,3 +10,4 @@ logs/
 docker-compose.override.yml
 test_data.log
 uploads/
+test_chromaDB.py

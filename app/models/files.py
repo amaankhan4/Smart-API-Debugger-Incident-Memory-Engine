@@ -5,7 +5,7 @@ from app.core.mongo import file_col
 async def create_file(data: FileCreate):
     try:
         doc = {
-            "id": data.get("id"),
+            "file_id": data.get("id"),
             "filename": data.get("filename"),
             "user_id": data.get("user_id"),
             "size_bytes": data.get("size_bytes"),
@@ -25,3 +25,16 @@ async def update_total_chunks(file_id: str, total_chunks: int):
         await file_col.update_one({"id": file_id}, {"$set": {"total_chunks": total_chunks}})
     except Exception as e:
         print(f"Error updating total chunks: {e}")
+
+async def get_all_files(user_id):
+    try:
+        data = []
+        async for doc in file_col.find({},{"_id": 0,"file_id":1,"filename":1,"created_at":1}):
+            data.append(doc)
+
+        return data
+    except Exception as e:
+        print("DB error",e)
+
+
+
