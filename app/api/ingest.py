@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, UploadFile,File, HTTPException, status 
 from app.models.files import update_total_chunks
 from app.core.config import settings
@@ -6,6 +7,7 @@ from app.core.mongo import file_col, raw_log_chunks_col, events_col
 import aiofiles
 from app.services.parser import parse_log_line
 from datetime import datetime
+from app.core.redis import redis_client
 
 target_dir = Path(settings.UPLOAD_DIR)
 
@@ -49,7 +51,12 @@ async def ingest_file(file_id: str):
                         "file_id": file_id,
                         "created_at": datetime.now()
                     }
-                    await events_col.insert_one(event_doc)
+                    result = await events_col.insert_one(event_doc)
+
+                    if result.inserted_id:
+                        redis_client.lpush("embeddings_queue", str(result.inserted_id))
+                        print(f"Queued event {result.inserted_id} for embedding")
+
                     total_events += 1
 
             sequence_number += 1
