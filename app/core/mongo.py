@@ -9,3 +9,5 @@ events_col = db.events
 incidents_col = db.incidents
 user_col = db.users
 file_col = db.files
+
+incident_notes_col = db.incident_notes

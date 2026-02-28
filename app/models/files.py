@@ -22,7 +22,7 @@ async def create_file(data: FileCreate):
 
 async def update_total_chunks(file_id: str, total_chunks: int):
     try:
-        await file_col.update_one({"id": file_id}, {"$set": {"total_chunks": total_chunks}})
+        await file_col.update_one({"file_id": file_id}, {"$set": {"total_chunks": total_chunks}})
     except Exception as e:
         print(f"Error updating total chunks: {e}")
 

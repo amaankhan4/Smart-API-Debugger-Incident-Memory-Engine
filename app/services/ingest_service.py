@@ -1,60 +1,32 @@
-from app.models.raw_log_chunk import create_raw_log_chunk
-from app.models.files import create_file, get_all_files
 import uuid
 from pathlib import Path
 
-def parse_logs(chunk):
-    pass
+from app.models.files import create_file, get_all_files
 
-async def process_uploaded_file_chunk(chunk,file_id,sequence_number):
 
-    raw_log_chunk_data = {
-        "file_id": file_id,
+async def save_file_to_db(file_size: int, file_name: str) -> str:
+    file_id = str(uuid.uuid4())
+    file_data = {
+        "id": file_id,
+        "filename": file_name,
         "user_id": None,
-        "sequence_number": sequence_number,
-        "content": chunk.decode("utf-8", errors="ignore")
+        "size_bytes": file_size,
+        "status": "NOT STARTED",
     }
+    result = await create_file(file_data)
+    if not result:
+        raise RuntimeError("Failed to create file record")
+    return file_id
 
-    await create_raw_log_chunk(raw_log_chunk_data)
 
-async def save_file_to_db(file_size, fileName):
-    try:
-        from datetime import datetime
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+async def get_all_existing_files_metadata(user_id=None, target_dir: Path = Path(".")):
+    result = await get_all_files(user_id)
 
-        file_id = str(uuid.uuid4())
+    exists_local = []
+    for file_doc in result:
+        file_name = f"{file_doc.get('file_id', '')}{file_doc.get('filename', '')}"
+        file_path = target_dir / file_name
+        if file_path.is_file():
+            exists_local.append(file_doc)
 
-        file_data = {
-            "id": file_id,
-            "filename": fileName,
-            "user_id": None,
-            "size_bytes": file_size,
-            "status": "NOT STARTED"
-        }
-
-        result = await create_file(file_data)
-        if result:
-            return str(file_id + fileName)
-        else:
-            raise Exception("Failed to create file record")
-    except Exception as e:
-        print(f"Error saving file to DB: {e}")
-        raise Exception("Error saving file to DB")
-
-async def get_all_existing_files_metadata(userId=None,target_dir=""): # No user for now.
-    try:
-        result = await get_all_files(userId)
-        
-        exists_local = []
-        for files in result:
-            fileName = files.get("file_id","") + files.get("filename","")
-            file = Path(target_dir / fileName)
-            
-            if file.is_file():
-                exists_local.append(files)
-        
-        return exists_local
-        
-    except Exception as e:
-        print("Error while fetching file data")
-        raise Exception("Error while fetching file data")
+    return exists_local
