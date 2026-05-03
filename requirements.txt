@@ -16,3 +16,6 @@ pymongo
 pydantic-settings
 python-multipart
 aiofiles
+sentence-transformers
+scikit-learn
+numpy
