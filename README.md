@@ -4,6 +4,12 @@ Production-ready MVP for AI-driven log intelligence:
 
 `Upload -> Ingest -> Parse -> Store -> Embed -> Cluster -> Search -> Incident Management`
 
+## Repository layout
+- `app/` → backend API + ingestion/embedding/clustering workers.
+- `ui/` → React + TypeScript frontend client.
+
+This keeps GitHub structure clear as backend service plus client UI.
+
 ## Implemented capabilities
 - Chunk-wise upload and ingestion.
 - Line-buffered parsing with carry-over between chunks.
@@ -27,7 +33,7 @@ Production-ready MVP for AI-driven log intelligence:
 - `GET /api/incidents/{incident_id}` incident detail
 - `POST /api/incidents/{incident_id}/notes?note=...` add note
 
-## Run instructions
+## Backend run instructions
 1. Create `.env`:
 
 ```env
@@ -59,7 +65,33 @@ python -m app.workers.embedding_workers
 python -m app.workers.clustering_worker
 ```
 
+## Frontend (client) run instructions
+1. Install dependencies:
+
+```bash
+cd ui
+npm install
+```
+
+2. (Optional) Configure API URL:
+
+```bash
+echo "VITE_API_BASE_URL=http://localhost:8000/api" > .env
+```
+
+3. Start development server:
+
+```bash
+npm run dev
+```
+
+4. Build for production:
+
+```bash
+npm run build
+```
+
 ## Notes
-- API and workers are independent processes.
+- API/workers/frontend are independent processes.
 - Chroma is expected to be reachable at `CHROMA_HOST:CHROMA_PORT`.
 - Startup creates indexes for ingestion safety and duplicate prevention.
