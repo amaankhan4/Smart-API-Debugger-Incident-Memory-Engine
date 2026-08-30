@@ -1,0 +1,105 @@
+name: incident-memory-engine
+
+x-backend-env: &backend-env
+  MONGODB_URI: mongodb://mongodb:27017
+  MONGODB_DB: incident_memory
+  REDIS_URL: redis://redis:6379/0
+  UPSTASH_VECTOR_REST_URL: ${UPSTASH_VECTOR_REST_URL:?set UPSTASH_VECTOR_REST_URL in your .env before starting}
+  UPSTASH_VECTOR_REST_TOKEN: ${UPSTASH_VECTOR_REST_TOKEN:?set UPSTASH_VECTOR_REST_TOKEN in your .env before starting}
+  UPLOAD_DIR: /srv/uploads
+  JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in your .env before starting}
+  ENVIRONMENT: ${ENVIRONMENT:-development}
+  LOG_JSON: ${LOG_JSON:-true}
+  CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+
+services:
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment: *backend-env
+    volumes:
+      - uploads:/srv/uploads
+      - model-cache:/models
+    ports:
+      - "8000:8000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  embedding-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: ["python", "-m", "app.workers.embedding_workers"]
+    environment: *backend-env
+    volumes:
+      - uploads:/srv/uploads
+      - model-cache:/models
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  clustering-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: ["python", "-m", "app.workers.clustering_worker"]
+    environment: *backend-env
+    volumes:
+      - model-cache:/models
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api/v1}
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo-data:
+  redis-data:
+  uploads:
+  model-cache:

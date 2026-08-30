@@ -1,9 +1,12 @@
 smartdebugvenv
 .env
+.env.local
 __pycache__/
 *.pyc
 instance/
-.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
 .idea/
 .DS_Store
 logs/
@@ -11,3 +14,9 @@ docker-compose.override.yml
 test_data.log
 uploads/
 test_chromaDB.py
+.pytest_cache/
+.venv/
+venv/
+node_modules/
+ui/dist/
+*.tsbuildinfo

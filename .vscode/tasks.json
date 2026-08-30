@@ -1,0 +1,46 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start dev stack",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["start.py"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "Preflight checks",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["start.py", "--check"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Backend tests",
+      "type": "shell",
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "pytest", "-q"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "Frontend tests",
+      "type": "shell",
+      "command": "npm",
+      "args": ["test"],
+      "options": { "cwd": "${workspaceFolder}/ui" },
+      "problemMatcher": [],
+      "group": "test"
+    }
+  ]
+}
