@@ -7,6 +7,8 @@ class RawLogChunkCreate(BaseModel):
     user_id: str
     sequence_number: int
     content: str
+    start_line_no: int
+    end_line_no: int
 
 class RawLogChunkDB(RawLogChunkCreate):
     id: Optional[str]
