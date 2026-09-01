@@ -1,0 +1,82 @@
+2026-08-29T09:14:02Z INFO api-gateway GET /api/v1/health 200 service=api-gateway trace_id=t-8801
+2026-08-29T09:14:03Z INFO auth-service User authenticated successfully service=auth-service user=u-4471 trace_id=t-8802
+2026-08-29T09:14:05Z DEBUG cart-service Cart snapshot loaded from cache service=cart-service items=3 trace_id=t-8802
+2026-08-29T09:14:07Z INFO checkout-service POST /api/v1/checkout 201 service=checkout-service trace_id=t-8802
+2026-08-29T09:14:11Z INFO catalog-service GET /api/v1/products 200 service=catalog-service trace_id=t-8803
+2026-08-29T09:15:20Z WARN checkout-service Connection pool utilisation at 82% service=checkout-service pool=primary trace_id=t-8811
+2026-08-29T09:15:44Z ERROR checkout-service Database connection timeout after 30000ms while reserving inventory service=checkout-service exception=ConnectionPoolTimeout trace_id=t-8812
+2026-08-29T09:16:02Z ERROR checkout-service Database connection timeout after 30000ms while writing order row service=checkout-service exception=ConnectionPoolTimeout trace_id=t-8813
+2026-08-29T09:16:31Z ERROR checkout-service POST /api/v1/checkout 500 database connection timeout acquiring connection from pool service=checkout-service exception=ConnectionPoolTimeout trace_id=t-8814
+2026-08-29T09:16:58Z ERROR checkout-service Database connection timeout after 30000ms while reserving inventory service=checkout-service exception=ConnectionPoolTimeout trace_id=t-8815
+2026-08-29T09:17:20Z ERROR checkout-service Timed out waiting for a database connection from pool primary service=checkout-service exception=ConnectionPoolTimeout trace_id=t-8816
+2026-08-29T09:17:49Z ERROR checkout-service POST /api/v1/checkout 500 database connection timeout acquiring connection from pool service=checkout-service exception=ConnectionPoolTimeout trace_id=t-8817
+2026-08-29T09:18:04Z WARN checkout-service Connection pool exhausted, 0 idle connections remaining service=checkout-service trace_id=t-8818
+2026-08-29T09:18:30Z INFO checkout-service Connection pool recovered, 12 idle connections service=checkout-service trace_id=t-8819
+2026-08-29T09:19:00Z INFO catalog-service GET /api/v1/products/9912 200 service=catalog-service trace_id=t-8820
+2026-08-29T09:19:16Z DEBUG search-service Query planner selected index sku_idx service=search-service trace_id=t-8821
+2026-08-29T09:22:41Z WARN payment-service Upstream latency 4200ms exceeds 2000ms budget service=payment-service upstream=stripe trace_id=t-8830
+2026-08-29T09:23:02Z ERROR payment-service POST /api/v1/charge 502 upstream payment gateway returned bad gateway service=payment-service exception=GatewayError trace_id=t-8831
+2026-08-29T09:23:29Z ERROR payment-service POST /api/v1/charge 502 upstream payment gateway returned bad gateway service=payment-service exception=GatewayError trace_id=t-8832
+2026-08-29T09:23:55Z ERROR payment-service Payment gateway unreachable, upstream responded 502 service=payment-service exception=GatewayError trace_id=t-8833
+2026-08-29T09:24:18Z ERROR payment-service POST /api/v1/charge 504 upstream payment gateway timed out service=payment-service exception=GatewayTimeout trace_id=t-8834
+2026-08-29T09:24:47Z ERROR payment-service Payment gateway unreachable, upstream responded 502 service=payment-service exception=GatewayError trace_id=t-8835
+2026-08-29T09:25:09Z ERROR payment-service POST /api/v1/charge 502 upstream payment gateway returned bad gateway service=payment-service exception=GatewayError trace_id=t-8836
+2026-08-29T09:25:33Z WARN payment-service Circuit breaker opened for upstream stripe service=payment-service trace_id=t-8837
+2026-08-29T09:26:10Z INFO payment-service Circuit breaker half-open, probing upstream service=payment-service trace_id=t-8838
+2026-08-29T09:26:44Z INFO payment-service Circuit breaker closed, upstream healthy service=payment-service trace_id=t-8839
+2026-08-29T09:28:02Z INFO auth-service POST /api/v1/auth/login 200 service=auth-service trace_id=t-8850
+2026-08-29T09:31:15Z ERROR auth-service GET /api/v1/auth/me 401 invalid token signature service=auth-service exception=InvalidTokenError trace_id=t-8860
+2026-08-29T09:31:38Z ERROR auth-service JWT validation failed, invalid token signature service=auth-service exception=InvalidTokenError trace_id=t-8861
+2026-08-29T09:32:01Z ERROR auth-service GET /api/v1/orders 401 invalid token signature service=auth-service exception=InvalidTokenError trace_id=t-8862
+2026-08-29T09:32:27Z ERROR auth-service JWT validation failed, token signature does not match service=auth-service exception=InvalidTokenError trace_id=t-8863
+2026-08-29T09:32:50Z ERROR auth-service GET /api/v1/auth/me 401 invalid token signature service=auth-service exception=InvalidTokenError trace_id=t-8864
+2026-08-29T09:33:14Z WARN auth-service 5 consecutive authentication failures from 203.0.113.44 service=auth-service trace_id=t-8865
+2026-08-29T09:34:02Z INFO auth-service Signing key rotated, kid=2026-08-b service=auth-service trace_id=t-8866
+2026-08-29T09:34:40Z INFO auth-service POST /api/v1/auth/login 200 service=auth-service trace_id=t-8867
+2026-08-29T09:36:05Z DEBUG cart-service Evicting 128 stale cart entries service=cart-service trace_id=t-8870
+2026-08-29T09:38:19Z ERROR cart-service Redis connection refused at cache-01:6379 service=cart-service exception=ConnectionRefusedError trace_id=t-8880
+2026-08-29T09:38:41Z ERROR cart-service Redis connection refused at cache-01:6379 service=cart-service exception=ConnectionRefusedError trace_id=t-8881
+2026-08-29T09:39:07Z ERROR cart-service GET /api/v1/cart 503 cache connection refused service=cart-service exception=ConnectionRefusedError trace_id=t-8882
+2026-08-29T09:39:33Z ERROR cart-service Redis connection refused at cache-01:6379 service=cart-service exception=ConnectionRefusedError trace_id=t-8883
+2026-08-29T09:39:58Z ERROR cart-service GET /api/v1/cart 503 cache connection refused service=cart-service exception=ConnectionRefusedError trace_id=t-8884
+2026-08-29T09:40:22Z WARN cart-service Falling back to database-backed cart reads service=cart-service trace_id=t-8885
+2026-08-29T09:41:50Z INFO cart-service Cache node cache-01 back online service=cart-service trace_id=t-8886
+2026-08-29T09:43:12Z INFO catalog-service GET /api/v1/products 200 service=catalog-service trace_id=t-8890
+2026-08-29T09:45:30Z WARN api-gateway Client 198.51.100.7 approaching rate limit, 950/1000 service=api-gateway trace_id=t-8900
+2026-08-29T09:45:52Z ERROR api-gateway GET /api/v1/products 429 rate limit exceeded for client 198.51.100.7 service=api-gateway trace_id=t-8901
+2026-08-29T09:46:14Z ERROR api-gateway GET /api/v1/products 429 rate limit exceeded for client 198.51.100.7 service=api-gateway trace_id=t-8902
+2026-08-29T09:46:39Z ERROR api-gateway Too many requests from client 198.51.100.7, throttling service=api-gateway trace_id=t-8903
+2026-08-29T09:47:03Z ERROR api-gateway GET /api/v1/search 429 rate limit exceeded for client 198.51.100.7 service=api-gateway trace_id=t-8904
+2026-08-29T09:47:28Z ERROR api-gateway Too many requests from client 198.51.100.7, throttling service=api-gateway trace_id=t-8905
+2026-08-29T09:48:00Z INFO api-gateway Rate limit window reset for client 198.51.100.7 service=api-gateway trace_id=t-8906
+2026-08-29T09:50:11Z INFO search-service GET /api/v1/search 200 service=search-service trace_id=t-8910
+2026-08-29T09:52:44Z WARN search-service Index lag 38s behind primary service=search-service trace_id=t-8911
+2026-08-29T09:55:03Z INFO notification-service Dispatched 412 order emails service=notification-service trace_id=t-8920
+2026-08-29T09:58:17Z ERROR notification-service SMTP handshake failed, TLS negotiation refused service=notification-service exception=SMTPHandshakeError trace_id=t-8930
+2026-08-29T09:58:44Z ERROR notification-service SMTP handshake failed, TLS negotiation refused service=notification-service exception=SMTPHandshakeError trace_id=t-8931
+2026-08-29T09:59:10Z ERROR notification-service Email delivery failed, TLS handshake refused by relay service=notification-service exception=SMTPHandshakeError trace_id=t-8932
+2026-08-29T09:59:36Z ERROR notification-service SMTP handshake failed, TLS negotiation refused service=notification-service exception=SMTPHandshakeError trace_id=t-8933
+2026-08-29T10:00:02Z WARN notification-service Email queue depth 2400, growing service=notification-service trace_id=t-8934
+2026-08-29T10:02:29Z INFO notification-service Relay certificate renewed, deliveries resumed service=notification-service trace_id=t-8935
+2026-08-29T10:05:41Z INFO inventory-service PUT /api/v1/inventory/9912 200 service=inventory-service trace_id=t-8940
+2026-08-29T10:08:03Z ERROR inventory-service Optimistic lock conflict on sku 9912, version mismatch service=inventory-service exception=StaleDataError trace_id=t-8950
+2026-08-29T10:08:26Z ERROR inventory-service Optimistic lock conflict on sku 4410, version mismatch service=inventory-service exception=StaleDataError trace_id=t-8951
+2026-08-29T10:08:51Z ERROR inventory-service PUT /api/v1/inventory/9912 409 optimistic lock conflict, version mismatch service=inventory-service exception=StaleDataError trace_id=t-8952
+2026-08-29T10:09:15Z ERROR inventory-service Optimistic lock conflict on sku 9912, version mismatch service=inventory-service exception=StaleDataError trace_id=t-8953
+2026-08-29T10:09:40Z WARN inventory-service Retrying inventory write, attempt 3 of 5 service=inventory-service trace_id=t-8954
+2026-08-29T10:11:02Z INFO inventory-service Inventory reconciliation completed, 0 drift service=inventory-service trace_id=t-8955
+2026-08-29T10:14:26Z DEBUG catalog-service Cache warm complete, 8412 products service=catalog-service trace_id=t-8960
+2026-08-29T10:17:48Z WARN checkout-service Slow query 2840ms on orders_by_user service=checkout-service trace_id=t-8970
+2026-08-29T10:21:09Z ERROR shipping-service Carrier API returned 503 service unavailable service=shipping-service exception=CarrierUnavailable trace_id=t-8980
+2026-08-29T10:21:35Z ERROR shipping-service Carrier API returned 503 service unavailable service=shipping-service exception=CarrierUnavailable trace_id=t-8981
+2026-08-29T10:22:00Z ERROR shipping-service POST /api/v1/shipments 503 carrier service unavailable service=shipping-service exception=CarrierUnavailable trace_id=t-8982
+2026-08-29T10:22:24Z ERROR shipping-service Carrier API returned 503 service unavailable service=shipping-service exception=CarrierUnavailable trace_id=t-8983
+2026-08-29T10:22:50Z WARN shipping-service Queuing shipment requests for later retry service=shipping-service trace_id=t-8984
+2026-08-29T10:25:13Z INFO shipping-service Carrier API healthy, draining retry queue service=shipping-service trace_id=t-8985
+2026-08-29T10:28:37Z INFO api-gateway GET /api/v1/health 200 service=api-gateway trace_id=t-8990
+2026-08-29T10:31:55Z CRITICAL checkout-service Order 55120 charged but not persisted, manual reconciliation required service=checkout-service exception=DataConsistencyError trace_id=t-9001
+2026-08-29T10:32:20Z CRITICAL checkout-service Order 55127 charged but not persisted, manual reconciliation required service=checkout-service exception=DataConsistencyError trace_id=t-9002
+2026-08-29T10:32:46Z CRITICAL checkout-service Order 55131 charged but not persisted, manual reconciliation required service=checkout-service exception=DataConsistencyError trace_id=t-9003
+2026-08-29T10:33:30Z WARN checkout-service Reconciliation job scheduled for 3 orphaned charges service=checkout-service trace_id=t-9004
+2026-08-29T10:36:12Z INFO checkout-service Reconciliation completed, 3 orders repaired service=checkout-service trace_id=t-9005
+2026-08-29T10:40:00Z INFO api-gateway Daily traffic summary 184203 requests, 0.42% error rate service=api-gateway trace_id=t-9010
