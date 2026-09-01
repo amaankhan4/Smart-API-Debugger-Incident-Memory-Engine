@@ -1,44 +1,103 @@
-from pathlib import Path
+import uuid
+from pathlib import PurePosixPath
 
-import aiofiles
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
 
+from app.api.deps import CurrentUser
 from app.core.config import settings
-from app.services.ingest_service import get_all_existing_files_metadata, save_file_to_db
+from app.repositories import events as events_repo
+from app.repositories import files as files_repo
+from app.schemas.common import MessageResponse, Page
+from app.schemas.enums import FileStatus
+from app.schemas.files import FileOut, UploadResponse
+from app.services.storage import FileTooLargeError, storage
+from app.utils.paths import sanitize_filename
+from app.utils.serialization import serialize_docs
 
-CHUNK_SIZE = 1024 * 1024
 router = APIRouter()
 
-target_dir = Path(settings.UPLOAD_DIR)
-target_dir.mkdir(parents=True, exist_ok=True)
 
-
-@router.post("/")
-async def upload_log(file: UploadFile = File(...)):
-    file_name = file.filename or ""
-    if not any(file_name.lower().endswith(ext) for ext in {".txt", ".log"}):
+def _validate_extension(filename: str) -> None:
+    suffix = PurePosixPath(sanitize_filename(filename)).suffix.lower()
+    if suffix not in settings.allowed_extensions:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Unsupported file extension. Only .txt and .log files are allowed.",
+            detail=f"Unsupported file type. Allowed: {', '.join(sorted(settings.allowed_extensions))}",
         )
 
-    file_id = await save_file_to_db(file_size=file.size or 0, file_name=file_name)
-    target_path = target_dir / f"{file_id}{file_name}"
 
+@router.post("", response_model=UploadResponse, status_code=status.HTTP_201_CREATED)
+async def upload_log_file(current_user: CurrentUser, file: UploadFile = File(...)) -> UploadResponse:
+    original_name = file.filename or "upload.log"
+    _validate_extension(original_name)
+
+    file_id = str(uuid.uuid4())
     try:
-        async with aiofiles.open(target_path, "wb") as out_file:
-            while True:
-                chunk = await file.read(CHUNK_SIZE)
-                if not chunk:
-                    break
-                await out_file.write(chunk)
+        stored_name, size_bytes = await storage.save(
+            file_id=file_id, filename=original_name, stream=file
+        )
+    except FileTooLargeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc)
+        ) from exc
     finally:
         await file.close()
 
-    return {"message": "File uploaded successfully", "file_id": file_id}
+    if size_bytes == 0:
+        await storage.delete(stored_name)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded file is empty")
+
+    await files_repo.create_file(
+        file_id=file_id,
+        user_id=current_user.id,
+        filename=sanitize_filename(original_name),
+        stored_name=stored_name,
+        size_bytes=size_bytes,
+    )
+
+    return UploadResponse(
+        file_id=file_id,
+        filename=sanitize_filename(original_name),
+        size_bytes=size_bytes,
+        status=FileStatus.UPLOADED,
+    )
 
 
-@router.get("/all-files")
-async def get_all_executable_files():
-    result = await get_all_existing_files_metadata(None, target_dir)
-    return {"message": "All executable files", "data": result}
+@router.get("", response_model=Page[FileOut])
+async def list_files(
+    current_user: CurrentUser,
+    file_status: FileStatus | None = Query(None, alias="status"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+) -> Page[FileOut]:
+    docs, total = await files_repo.list_files(
+        current_user.id,
+        status=file_status.value if file_status else None,
+        limit=limit,
+        offset=offset,
+    )
+    items = [FileOut(**doc) for doc in serialize_docs(docs)]
+    return Page[FileOut].build(items, total, limit, offset)
+
+
+@router.get("/{file_id}", response_model=FileOut)
+async def get_file(file_id: str, current_user: CurrentUser) -> FileOut:
+    doc = await files_repo.get_file(file_id, current_user.id)
+    if doc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
+    return FileOut(**serialize_docs([doc])[0])
+
+
+@router.delete("/{file_id}", response_model=MessageResponse)
+async def delete_file(file_id: str, current_user: CurrentUser) -> MessageResponse:
+    doc = await files_repo.get_file(file_id, current_user.id)
+    if doc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
+
+    await events_repo.delete_events_for_file(file_id, current_user.id)
+    await files_repo.delete_file_record(file_id, current_user.id)
+    if stored_name := doc.get("stored_name"):
+        await storage.delete(stored_name)
+
+    return MessageResponse(message="File and derived events deleted")
+

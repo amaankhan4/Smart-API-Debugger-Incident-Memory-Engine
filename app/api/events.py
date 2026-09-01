@@ -1,125 +1,89 @@
-from datetime import datetime, timedelta
-from typing import Optional
+from datetime import datetime
 
-from bson import ObjectId
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, status
 
-from app.core.mongo import events_col, raw_log_chunks_col
-from app.core.vector_db import event_collection
-from app.services.embedding import generate_embedding
+from app.api.deps import CurrentUser
+from app.repositories import events as events_repo
+from app.schemas.common import Page
+from app.schemas.enums import ErrorCategory, Level
+from app.schemas.events import EventContextResponse, EventOut, SimilarEventMatch
+from app.services.context import build_event_context
+from app.services.search import escape_regex, similar_to_event
+from app.utils.serialization import serialize_docs
 
 router = APIRouter()
 
 
-def _serialize_event(doc: dict) -> dict:
-    doc["id"] = str(doc.pop("_id"))
-    return doc
-
-
-@router.get("/")
+@router.get("", response_model=Page[EventOut])
 async def list_events(
-    file_id: Optional[str] = None,
-    service: Optional[str] = None,
-    level: Optional[str] = None,
-    trace_id: Optional[str] = None,
-    limit: int = Query(100, le=1000),
-):
-    query = {}
-    if file_id:
-        query["file_id"] = file_id
-    if service:
-        query["service"] = service
-    if level:
-        query["level"] = level.upper()
-    if trace_id:
-        query["trace_id"] = trace_id
-
-    docs = await events_col.find(query).sort("timestamp", -1).limit(limit).to_list(length=limit)
-    return {"items": [_serialize_event(doc) for doc in docs], "count": len(docs)}
-
-
-@router.get("/similar")
-async def similar_events(query: str, limit: int = Query(10, ge=1, le=100)):
-    embedding = generate_embedding(query)
-    result = event_collection.query(query_embeddings=[embedding], n_results=limit)
-
-    matches = []
-    ids = result.get("ids", [[]])[0]
-    metadatas = result.get("metadatas", [[]])[0]
-    distances = result.get("distances", [[]])[0]
-
-    for idx, vector_id in enumerate(ids):
-        metadata = metadatas[idx] if idx < len(metadatas) else {}
-        event_id = metadata.get("event_id")
-        if not event_id:
-            continue
-        event = await events_col.find_one({"_id": ObjectId(event_id)})
-        if not event:
-            continue
-        matches.append(
-            {
-                "vector_id": vector_id,
-                "distance": distances[idx] if idx < len(distances) else None,
-                "event": _serialize_event(event),
-            }
-        )
-
-    return {"query": query, "matches": matches}
+    current_user: CurrentUser,
+    file_id: str | None = None,
+    service: str | None = None,
+    level: Level | None = None,
+    error_category: ErrorCategory | None = None,
+    incident_id: str | None = None,
+    trace_id: str | None = None,
+    start_time: datetime | None = None,
+    end_time: datetime | None = None,
+    search: str | None = Query(None, max_length=200),
+    only_errors: bool = False,
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+) -> Page[EventOut]:
+    query = events_repo.build_event_query(
+        current_user.id,
+        file_id=file_id,
+        service=service,
+        level=level.value if level else None,
+        error_category=error_category.value if error_category else None,
+        incident_id=incident_id,
+        trace_id=trace_id,
+        start_time=start_time,
+        end_time=end_time,
+        search=escape_regex(search) if search else None,
+        only_errors=only_errors,
+    )
+    docs, total = await events_repo.list_events(query, limit=limit, offset=offset)
+    items = [EventOut(**doc) for doc in serialize_docs(docs)]
+    return Page[EventOut].build(items, total, limit, offset)
 
 
-@router.get("/{event_id}/context")
+@router.get("/{event_id}", response_model=EventOut)
+async def get_event(event_id: str, current_user: CurrentUser) -> EventOut:
+    doc = await events_repo.get_event(event_id, current_user.id)
+    if doc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    return EventOut(**serialize_docs([doc])[0])
+
+
+@router.get("/{event_id}/context", response_model=EventContextResponse)
 async def event_context(
     event_id: str,
-    line_window: int = Query(5, ge=0, le=500),
-    time_window_seconds: int = Query(300, ge=0, le=86400),
-):
-    event = await events_col.find_one({"_id": ObjectId(event_id)})
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    current_user: CurrentUser,
+    line_window: int = Query(20, ge=1, le=200),
+    time_window_seconds: int = Query(120, ge=1, le=86400),
+) -> EventContextResponse:
+    doc = await events_repo.get_event(event_id, current_user.id)
+    if doc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
-    file_id = event.get("file_id")
-    line_no = event.get("line_no", 0)
-    timestamp = event.get("timestamp")
-
-    trace_query = {
-        "file_id": file_id,
-        "trace_id": event.get("trace_id"),
-    }
-    same_trace = []
-    if event.get("trace_id"):
-        same_trace_docs = await events_col.find(trace_query).sort("line_no", 1).limit(200).to_list(length=200)
-        same_trace = [_serialize_event(doc) for doc in same_trace_docs]
-
-    line_docs = await events_col.find(
-        {
-            "file_id": file_id,
-            "line_no": {"$gte": max(1, line_no - line_window), "$lte": line_no + line_window},
-        }
-    ).sort("line_no", 1).to_list(length=(2 * line_window) + 1)
-
-    window_docs = []
-    if timestamp:
-        start = timestamp - timedelta(seconds=time_window_seconds)
-        end = timestamp + timedelta(seconds=time_window_seconds)
-        window_docs = await events_col.find(
-            {"file_id": file_id, "timestamp": {"$gte": start, "$lte": end}}
-        ).sort("timestamp", 1).limit(500).to_list(length=500)
-
-    chunk = await raw_log_chunks_col.find_one(
-        {
-            "file_id": file_id,
-            "start_line_no": {"$lte": line_no},
-            "end_line_no": {"$gte": line_no},
-        }
+    context = await build_event_context(
+        user_id=current_user.id,
+        event=doc,
+        line_window=line_window,
+        time_window_seconds=time_window_seconds,
     )
+    return EventContextResponse(**context)
 
-    return {
-        "event": _serialize_event(event),
-        "same_trace_id": same_trace,
-        "time_window": [_serialize_event(doc) for doc in window_docs],
-        "line_window": [_serialize_event(doc) for doc in line_docs],
-        "chunk_fallback": {
-            "sequence_number": chunk.get("sequence_number") if chunk else None,
-            "content": chunk.get("content") if chunk else None,
-        },
-    }
+
+@router.get("/{event_id}/similar", response_model=list[SimilarEventMatch])
+async def similar_events(
+    event_id: str, current_user: CurrentUser, limit: int = Query(10, ge=1, le=50)
+) -> list[SimilarEventMatch]:
+    doc = await events_repo.get_event(event_id, current_user.id)
+    if doc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    matches = await similar_to_event(current_user.id, doc, limit)
+    return [SimilarEventMatch(**match) for match in matches]
+
