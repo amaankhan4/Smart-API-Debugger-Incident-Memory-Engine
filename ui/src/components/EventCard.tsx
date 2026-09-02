@@ -1,27 +1,56 @@
+import clsx from 'clsx';
+
+import { CategoryBadge, LevelBadge, ServiceBadge, StatusCodeBadge } from 'components/ui/Badges';
 import type { EventRecord } from 'types/api';
-import { formatDate } from 'utils/format';
+import { formatDate, formatRelative } from 'utils/format';
 
 type EventCardProps = {
   event: EventRecord;
   onClick?: () => void;
+  score?: number;
+  matchedOn?: string[];
+  selected?: boolean;
 };
 
-const levelStyle: Record<string, string> = {
-  ERROR: 'bg-rose-500/20 text-rose-200 border-rose-500/30',
-  WARN: 'bg-amber-500/20 text-amber-200 border-amber-500/30',
-  INFO: 'bg-sky-500/20 text-sky-200 border-sky-500/30'
-};
-
-export const EventCard = ({ event, onClick }: EventCardProps) => (
-  <button onClick={onClick} className="card w-full p-4 text-left transition hover:border-indigo-400/50">
-    <div className="mb-2 flex items-center gap-2">
-      <span className={`rounded border px-2 py-0.5 text-xs ${levelStyle[event.level] ?? levelStyle.INFO}`}>
-        {event.level}
+export const EventCard = ({ event, onClick, score, matchedOn, selected }: EventCardProps) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={clsx(
+      'panel w-full p-4 text-left transition-colors hover:border-line-strong hover:bg-surface-raised',
+      selected && 'border-accent/50 bg-accent-dim'
+    )}
+  >
+    <div className="flex flex-wrap items-center gap-2">
+      <LevelBadge level={event.level} />
+      <ServiceBadge service={event.service} />
+      <StatusCodeBadge code={event.status_code} />
+      <CategoryBadge category={event.error_category} />
+      {typeof score === 'number' && (
+        <span className="chip border-accent/30 bg-accent-dim text-accent-soft">
+          {Math.round(score * 100)}% match
+        </span>
+      )}
+      <span
+        className="ml-auto shrink-0 text-2xs text-content-subtle"
+        title={formatDate(event.timestamp)}
+      >
+        {formatRelative(event.timestamp)}
       </span>
-      <span className="text-xs text-slate-400">{event.service ?? 'unknown-service'}</span>
-      <span className="ml-auto text-xs text-slate-500">{formatDate(event.timestamp)}</span>
     </div>
-    <p className="line-clamp-2 text-sm text-slate-200">{event.message}</p>
-    <p className="mt-2 text-xs text-slate-500">file_id: {event.file_id}</p>
+
+    <p className="mt-2.5 line-clamp-2 font-mono text-xs leading-relaxed text-content">
+      {event.message || <span className="text-content-subtle">(empty log line)</span>}
+    </p>
+
+    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-2xs text-content-subtle">
+      <span>line {event.line_no}</span>
+      {event.exception && <span className="font-mono">{event.exception}</span>}
+      {event.path && <span className="font-mono">{event.http_method} {event.path}</span>}
+      {matchedOn && matchedOn.length > 0 && (
+        <span className="text-accent-soft">matched on {matchedOn.join(', ')}</span>
+      )}
+    </div>
   </button>
 );
+
