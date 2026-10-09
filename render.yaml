@@ -1,0 +1,36 @@
+# Portfolio API deployment. Background workers are intentionally not declared:
+# free Render plans do not provide a persistent background-worker service.
+services:
+  - type: web
+    name: incident-memory-engine-api
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_JSON
+        value: "true"
+      - key: UPLOAD_DIR
+        value: /tmp/incident-memory-uploads
+      - key: JWT_SECRET
+        generateValue: true
+      # Provide these in Render's environment-variable form. Never commit them.
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB
+        value: incident_memory
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
+      - key: UPSTASH_VECTOR_REST_URL
+        sync: false
+      - key: UPSTASH_VECTOR_REST_TOKEN
+        sync: false
+      # Set to the exact Vercel URL after deploying the UI.
+      - key: CORS_ORIGINS
+        sync: false
