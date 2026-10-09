@@ -14,9 +14,11 @@ Create these first and keep their credentials in the host dashboards only:
 
 ## 2. Deploy the API
 
-Create a Render Blueprint from this repository. `render.yaml` creates the
-FastAPI service and prompts for the managed-service credentials. It deliberately
-uses `/tmp/incident-memory-uploads`: free web services have ephemeral disks, so
+Create a Render Blueprint from this repository. Keep **Root Directory blank**
+(the repository root): the API uses `app.main:app`, while its dependency file is
+`app/requirements.txt`. `render.yaml` creates the FastAPI service and prompts
+for the managed-service credentials. It deliberately uses
+`/tmp/incident-memory-uploads`: free web services have ephemeral disks, so
 uploaded source files are not durable across a restart.
 
 After Vercel is deployed, set `CORS_ORIGINS` to its exact URL, for example

@@ -6,7 +6,9 @@ services:
     runtime: python
     plan: free
     region: singapore
-    buildCommand: pip install -r requirements.txt
+    # Keep Render's Root Directory at the repository root (blank).  `main.py`
+    # imports `app.*`, so starting inside `app/` makes `app.main` unimportable.
+    buildCommand: pip install -r app/requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers
     healthCheckPath: /health
     envVars:
